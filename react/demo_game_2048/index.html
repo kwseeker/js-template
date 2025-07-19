@@ -1,13 +1,19 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- 字符集声明，告诉文档使用哪种字符编码 -->
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- 用于设置网页在移动设备上的视口（viewport）行为：设置为设备屏幕宽度、初始缩放比例 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>2048 Game</title>
   </head>
   <body>
     <div id="root"></div>
+    <!-- 嵌入可执行代码或数据，通常用作嵌入或者引用 JavaScript 代码
+         https://developer.mozilla.org/zh-CN/docs/Web/HTML/Reference/Elements/script 
+         type="module" 表示这是一个 JavaScript 模块，用于支持JS模块特性，比如js拆分成多个模块文件、可以使用 import/export 导入导出模块功能等等。
+    -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

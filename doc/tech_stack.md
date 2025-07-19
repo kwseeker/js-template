@@ -84,15 +84,73 @@
 
   一个 React UI 组件库。
 
+  + @mui/material
+  
+    提供了丰富的 React 组件集合，这些组件遵循 Google 的 Material Design 规范。
+
+  + @mui/icons-material
+
+    包含了大量的 Material Icons，可以直接在 React 组件中使用。
+
 ### 6.2 CSS 相关
+
+CSS 样式控制的4种实现方式：
+
+```html
+<!-- style css -->
+<div style="{ borderRadius: '0.5rem', padding: '1rem' }"> Click </div>
+<!-- TailwindCSS 等 -->
+<div class="rounded-lg p-4"> Click </div>
+<!-- Bootstrap 等 -->
+<div class="button"> Click </div>
+<Button> Click </Button>
+```
 
 + [Emotion](https://emotion.sh/docs/introduction)
 
-+ [Tailwind](https://www.tailwindcss.cn/docs/installation)
+  一个 CSS-in-JS（即使用JS语法定义样式）库，MUI 使用它来处理组件的样式。
+  CSS-in-JS 比如：
+  ```js
+    render( 
+      <div 
+        css={{ backgroundColor: 'hotpink', '&:hover': { color: 'lightgreen' } }} 
+      > 
+        This has a hotpink background. 
+      </div> 
+    )
+    ```
+
+  + @emotion/react
+
+    为 React 提供了对 JSX 中使用 CSS 样式的支持，主要是通过 `css` 属性和 `Global` 组件来实现样式注入。
+
+  + @emotion/styled
+
+    是 Emotion 提供的 **`styled` API**，类似于 `styled-components`，允许你使用带样式的组件（styled components）来构建 UI。
+    比如：
+    ```jsx
+    import styled from '@emotion/styled';
+    
+    const Button = styled.button`
+    	  background-color: blue;
+    	  color: white;
+    	  padding: 10px 20px;
+    	  border: none;
+    	  border-radius: 4px;
+    	`;
+    
+    function App() {
+        return <Button>Click me</Button>;
+    }
+    ```
+
++ [TailwindCSS](https://www.tailwindcss.cn/docs/installation)
+
+  一个 CSS 组件框架，其理念是提供一套完整的，最小单位的工具类CSS，再由设计师将它们组合起来。
+  是上面CSS样式控制的第2种实现方式。
+  可以让你脱离css文件，在html直接通过class修改样式。
 
 + [PostCSS](https://www.postcss.com.cn/)
 
   可以转换新的 CSS 特性到浏览器兼容的版本。
-
-
 
