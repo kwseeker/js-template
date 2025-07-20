@@ -150,6 +150,8 @@ CSS 样式控制的4种实现方式：
   是上面CSS样式控制的第2种实现方式。
   可以让你脱离css文件，在html直接通过class修改样式。
 
+  另外官方还提供了组件库（tailwindplus）和网页模板（收费）。
+
 + [PostCSS](https://www.postcss.com.cn/)
 
   可以转换新的 CSS 特性到浏览器兼容的版本。
