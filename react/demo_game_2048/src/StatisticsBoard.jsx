@@ -8,8 +8,7 @@ const StatItem = ({ label, value }) => (
       borderRadius: "8px",
       padding: "8px",
       minWidth: "80px",
-      textAlign: "center",
-      margin: "0 0",
+      flexGrow: 1,
     }}
   >
     <Typography
@@ -42,7 +41,7 @@ const StatisticsBoard = ({ score, bestScore, time, bestTime }) => {
         display: "flex",
         justifyContent: "space-between",
         flexWrap: "wrap",
-        gap: "8px",
+        gap: "16px",
         borderRadius: "8px",
       }}
     >

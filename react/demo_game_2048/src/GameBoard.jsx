@@ -12,7 +12,8 @@ const GameBoard = () => {
   // 根据数值获取对应的背景色
   const getTileColor = (value) => {
     const colors = {
-      0: "#f5f5f5", // 浅灰色
+      // 0: "#f5f5f5", // 浅灰色
+      0: "#ccc0b4",
       2: "#fff8e1", // 琥珀色100
       4: "#ffecb3", // 琥珀色200
       8: "#ffe0b2", // 橙色300
