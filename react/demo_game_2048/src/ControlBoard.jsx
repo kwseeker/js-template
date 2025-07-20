@@ -4,7 +4,7 @@ import { Button, ButtonGroup } from "@mui/material";
 const ControlBoard = ({ onNewGame, onPauseResume, onUndo, isPaused }) => {
   return (
     // 这里的 Tailwind CSS 无效 ？？？
-    <div className="flex flex-col items-left space-y-8 p-4">
+    <div className="items-left flex flex-col space-y-8 p-4">
       <ButtonGroup variant="contained" className="w-full max-w-md" fullWidth>
         <Button color="primary" onClick={onNewGame} className="py-3">
           新游戏
@@ -21,7 +21,7 @@ const ControlBoard = ({ onNewGame, onPauseResume, onUndo, isPaused }) => {
         </Button>
       </ButtonGroup>
 
-      <div className="text-sm text-blue-500 mt-2">使用方向键或WASD移动方块</div>
+      <div className="mt-2 text-sm text-blue-500">使用方向键或WASD移动方块</div>
     </div>
   );
 };
