@@ -1,13 +1,54 @@
-import React from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { Grid, Paper, Typography, Box } from "@mui/material";
 
-const GameBoard = () => {
-  // 初始空棋盘数据
-  const board = Array(4)
-    .fill()
-    .map(() => Array(4).fill(0));
-  board[1][0] = 2; // 示例数据
-  board[2][3] = 4; // 示例数据
+const GRID_SIZE = 4; 
+const GAME_TARGET = 2048;
+
+const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
+  console.log("GameBoard rendered");
+
+  // 保存游戏棋盘数据
+  const [board, setBoard] = useState(
+    Array(GRID_SIZE)
+      .fill()
+      .map(() => Array(GRID_SIZE).fill(0)),
+  );
+  const [gameOver, setGameOver] = useState(false);
+
+  // TODO 这里的函数必须被封装到的 useCallback 中否则会报错 ?
+  const initGame = useCallback(() => {
+    console.log("Initializing game board...");
+
+    const newBoard = Array(GRID_SIZE)
+      .fill()
+      .map(() => Array(GRID_SIZE).fill(0));
+    // 在两个随机位置添加初始数字
+    addRandomTile(newBoard);
+    addRandomTile(newBoard);
+
+    setBoard(newBoard);
+    setGameOver(false);
+    onScoreUpdate(0);
+  }, [onScoreUpdate]);
+
+  // 先查找可用的空格,然后随机选择一个位置放置新数字(2或4)
+  const addRandomTile = (grid) => {
+    const emptyCells = [];
+    grid.forEach((row, i) => {
+      row.forEach((cell, j) => {
+        if (cell === 0) emptyCells.push([i, j]);
+      });
+    });
+
+    if (emptyCells.length > 0) {
+      const [i, j] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      grid[i][j] = Math.random() < 0.85 ? 2 : 4;
+    }
+  };
+
+  useEffect(() => {
+    initGame();
+  }, [initGame]); //每个对象的 initGame 都一样，通过这种方式实现了组件仅初始化一次
 
   // 根据数值获取对应的背景色
   const getTileColor = (value) => {
@@ -29,6 +70,118 @@ const GameBoard = () => {
     return colors[value] || "#e0e0e0"; // 默认灰色300
   };
 
+  // 移动棋子并合此方向上相邻的相同的数字
+  const moveTiles = (direction) => {
+    if (gameOver) 
+      return;
+
+    const newGrid = board.map((row) => [...row]);
+    let moved = false;
+    let scoreIncrease = 0;
+
+    const processCells = (cells) => {
+      const nonZeroCells = cells.filter((val) => val !== 0);
+      const mergedCells = [];
+
+      for (let i = 0; i < nonZeroCells.length; i++) {
+        if (
+          i < nonZeroCells.length - 1 &&
+          nonZeroCells[i] === nonZeroCells[i + 1]
+        ) {
+          mergedCells.push(nonZeroCells[i] * 2);
+          scoreIncrease += nonZeroCells[i] * 2;
+          i++;
+        } else {
+          mergedCells.push(nonZeroCells[i]);
+        }
+      }
+
+      while (mergedCells.length < cells.length) {
+        mergedCells.push(0);
+      }
+
+      return mergedCells;
+    };
+
+    if (direction === "left") {
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const row = [...newGrid[i]];
+        const processed = processCells(row);
+        if (JSON.stringify(row) !== JSON.stringify(processed)) 
+          moved = true;
+        newGrid[i] = processed;
+      }
+    } else if (direction === "right") {
+      for (let i = 0; i < GRID_SIZE; i++) {
+        const row = [...newGrid[i]];
+        const processed = processCells(row.reverse()).reverse();
+        if (JSON.stringify(row) !== JSON.stringify(processed))
+          moved = true;
+        newGrid[i] = processed;
+      }
+    } else if (direction === "up") {
+      for (let j = 0; j < GRID_SIZE; j++) {
+        const column = newGrid.map((row) => row[j]);
+        const processed = processCells(column);
+        if (JSON.stringify(column) !== JSON.stringify(processed)) moved = true;
+        processed.forEach((val, i) => (newGrid[i][j] = val));
+      }
+    } else if (direction === "down") {
+      for (let j = 0; j < GRID_SIZE; j++) {
+        const column = newGrid.map((row) => row[j]).reverse();
+        const processed = processCells(column).reverse();
+        if (JSON.stringify(column) !== JSON.stringify(processed.reverse()))
+          moved = true;
+        processed.forEach((val, i) => (newGrid[GRID_SIZE - 1 - i][j] = val));
+      }
+    }
+
+    // 游戏结束
+    // 游戏成功：出现 2048 砖块
+    // 游戏失败：没有空格且没有相邻的相同数字
+    const checkGameOver = (grid) => {
+      // let done = grid.some(row => row.includes(GAME_TARGET));
+      // if (done && ) {
+      // }
+
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          if (grid[i][j] === 0) return false;
+        }
+      }
+  
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          if (j < GRID_SIZE - 1 && grid[i][j] === grid[i][j + 1]) return false;
+          if (i < GRID_SIZE - 1 && grid[i][j] === grid[i + 1][j]) return false;
+        }
+      }
+  
+      setGameOver(true);
+    };
+
+    if (moved) {
+      addRandomTile(newGrid);
+      setBoard(newGrid);
+      onScoreUpdate((prev) => prev + scoreIncrease);
+
+      checkGameOver(newGrid);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        const direction = e.key.replace("Arrow", "").toLowerCase();
+        moveTiles(direction);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [board, gameOver]); // TODO 这里依赖项为何设置这两个值？
+
   return (
     <Box
       sx={{
@@ -44,7 +197,13 @@ const GameBoard = () => {
         {board.flatMap((row, rowIndex) => (
           <Grid container size={12} spacing={2} key={rowIndex}>
             {row.map((cell, colIndex) => (
-              <Grid size={3} key={`${rowIndex}-${colIndex}`} display="flex" justifyContent="center" alignItems="center" >
+              <Grid
+                size={3}
+                key={`${rowIndex}-${colIndex}`}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+              >
                 <Paper
                   elevation={3}
                   sx={{

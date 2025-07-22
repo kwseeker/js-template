@@ -35,6 +35,8 @@ const StatItem = ({ label, value }) => (
 );
 
 const StatisticsBoard = ({ score, bestScore, time, bestTime }) => {
+  console.log("StatisticsBoard rendered");
+
   return (
     <Box
       sx={{

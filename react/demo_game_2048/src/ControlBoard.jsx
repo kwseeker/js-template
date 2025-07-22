@@ -2,6 +2,8 @@ import React from "react";
 import { Button, ButtonGroup } from "@mui/material";
 
 const ControlBoard = ({ onNewGame, onPauseResume, onUndo, isPaused }) => {
+  console.log("ControlBoard rendered");
+
   return (
     <div className="items-left flex flex-col space-y-6 p-4">
       <ButtonGroup variant="contained" size="large" className="w-full max-w-md" fullWidth>
