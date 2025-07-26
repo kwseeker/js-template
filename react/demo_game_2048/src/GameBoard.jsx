@@ -1,19 +1,21 @@
 import React, { useEffect, useCallback, useState } from "react";
-import { Grid, Paper, Typography, Box } from "@mui/material";
+import { Grid, Paper, Typography, Box, Button } from "@mui/material";
+import { tickToTime } from "./utils";
 
 const GRID_SIZE = 4; 
 const GAME_TARGET = 2048;
 
-const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
+const GameBoard = ({ score, setScore, bestScore, gameTime, gameState, setGameState, handleNewGame, 
+  board, setBoard, saveGameHistory, restoreGameState}) => {
   console.log("GameBoard rendered");
 
   // 保存游戏棋盘数据
-  const [board, setBoard] = useState(
-    Array(GRID_SIZE)
-      .fill()
-      .map(() => Array(GRID_SIZE).fill(0)),
-  );
-  const [gameOver, setGameOver] = useState(false);
+  // const [board, setBoard] = useState(
+  //   Array(GRID_SIZE)
+  //     .fill()
+  //     .map(() => Array(GRID_SIZE).fill(0)),
+  // );
+  const [newRecord, setNewRecord] = useState(false);
 
   // TODO 这里的函数必须被封装到的 useCallback 中否则会报错 ?
   const initGame = useCallback(() => {
@@ -22,14 +24,21 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
     const newBoard = Array(GRID_SIZE)
       .fill()
       .map(() => Array(GRID_SIZE).fill(0));
+    // 测试
+    newBoard[3][0] = 1024;
+    newBoard[3][1] = 512;
+    newBoard[3][2] = 256;
+    newBoard[3][3] = 128;
+    newBoard[2][3] = 64;
+    newBoard[2][2] = 32;
+    newBoard[2][1] = 16;
+    newBoard[2][0] = 8;
     // 在两个随机位置添加初始数字
     addRandomTile(newBoard);
     addRandomTile(newBoard);
-
     setBoard(newBoard);
-    setGameOver(false);
-    onScoreUpdate(0);
-  }, [onScoreUpdate]);
+    setNewRecord(false);
+  }, [setScore]); // setScore 只有在 App 插件重建时才会不同
 
   // 先查找可用的空格,然后随机选择一个位置放置新数字(2或4)
   const addRandomTile = (grid) => {
@@ -72,7 +81,7 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
 
   // 移动棋子并合此方向上相邻的相同的数字
   const moveTiles = (direction) => {
-    if (gameOver) 
+    if (gameState === 'paused' || gameState === 'succeed' || gameState === 'failed') 
       return;
 
     const newGrid = board.map((row) => [...row]);
@@ -140,30 +149,43 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
     // 游戏成功：出现 2048 砖块
     // 游戏失败：没有空格且没有相邻的相同数字
     const checkGameOver = (grid) => {
-      // let done = grid.some(row => row.includes(GAME_TARGET));
-      // if (done && ) {
-      // }
+      // 检查游戏成功：出现2048方块
+      const hasWon = grid.some(row => row.includes(GAME_TARGET));
+      if (hasWon) {
+        let currentScore = score + scoreIncrease
+        console.log("won! current score: ", currentScore);
+        setGameState('succeed');
+        // 检查并更新最高分, TODO 这个应该可以移动到 App.jsx 中
+        if (currentScore > bestScore) {
+          setNewRecord(true);
+        }
+        return;
+      }
 
+      // 检查游戏失败：没有空格且没有相邻的相同数字
       for (let i = 0; i < GRID_SIZE; i++) {
         for (let j = 0; j < GRID_SIZE; j++) {
           if (grid[i][j] === 0) return false;
         }
       }
-  
+
       for (let i = 0; i < GRID_SIZE; i++) {
         for (let j = 0; j < GRID_SIZE; j++) {
           if (j < GRID_SIZE - 1 && grid[i][j] === grid[i][j + 1]) return false;
           if (i < GRID_SIZE - 1 && grid[i][j] === grid[i + 1][j]) return false;
         }
       }
-  
-      setGameOver(true);
+
+      setGameState('failed');
     };
 
     if (moved) {
+      // 保存移动前的状态
+      saveGameHistory(board);
       addRandomTile(newGrid);
       setBoard(newGrid);
-      onScoreUpdate((prev) => prev + scoreIncrease);
+      console.log('scoreIncrease: ', scoreIncrease);
+      setScore((prev) => prev + scoreIncrease);
 
       checkGameOver(newGrid);
     }
@@ -179,8 +201,12 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [board, gameOver]); // TODO 这里依赖项为何设置这两个值？
+    console.log("key bound!");
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      console.log("key unbound!")
+    }
+  }, [board, gameState]); // TODO 为何在每次 board 改变时都要重新绑定事件 
 
   return (
     <Box
@@ -190,6 +216,7 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
         justifyContent: "center",
         backgroundColor: "#baada0",
         borderRadius: 2,
+        position: 'relative',
       }}
     >
       {/* spacing 设置元素行列间距 */}
@@ -230,6 +257,56 @@ const GameBoard = ({ onScoreUpdate, bestScore, setBestscore }) => {
           </Grid>
         ))}
       </Grid>
+
+      {(gameState === "succeed" || gameState === "failed" || gameState === "paused") && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 2,
+            zIndex: 10,
+          }}
+        >
+          <Box
+            sx={{
+              backgroundColor: 'white',
+              padding: 4,
+              borderRadius: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="h4">
+              {gameState === 'succeed' ? '恭喜你赢了' : gameState === 'failed' ? '游戏失败' : '已暂停'}
+            </Typography>
+            {gameState !== 'paused' && (
+              <>
+                {gameState === 'succeed' && (
+                  <Typography variant="h5" sx={{ mt: 2 }}>
+                    {newRecord ? '新记录！' : '得分:'} {score} {', 用时:'} {tickToTime(gameTime)}
+                  </Typography>
+                )}
+                {gameState === 'failed' && (
+                  <Typography variant="h5" sx={{ mt: 2 }}>
+                    最终得分：{score}
+                  </Typography>
+                )}
+                <Button variant="contained" sx={{ mt: 2 }} onClick={handleNewGame}>
+                  再来一局
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

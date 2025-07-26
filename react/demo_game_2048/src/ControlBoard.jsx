@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, ButtonGroup } from "@mui/material";
 
-const ControlBoard = ({ onNewGame, onPauseResume, onUndo, isPaused }) => {
+const ControlBoard = ({ onNewGame, onPauseResume, onUndo, gameState }) => {
   console.log("ControlBoard rendered");
 
   return (
@@ -11,18 +11,22 @@ const ControlBoard = ({ onNewGame, onPauseResume, onUndo, isPaused }) => {
           新游戏
         </Button>
         <Button
-          color={isPaused ? "success" : "warning"}
+          color={gameState === 'paused' ? "success" : "warning"}
           onClick={onPauseResume}
           className="py-3"
         >
-          {isPaused ? "继续游戏" : "暂停游戏"}
+          {gameState === "paused" ? "继续游戏" : "暂停游戏"}
         </Button>
-        <Button color="secondary" onClick={onUndo} className="py-3">
+        <Button
+          color={gameState === 'ongoing' ? "secondary" : "disabled"}
+          onClick={onUndo}
+          className="py-3"
+        >
           上一步
         </Button>
       </ButtonGroup>
 
-      <div className="text-sm text-blue-500">使用方向键或WASD移动方块</div>
+      <div className="text-sm text-blue-500">使用方向键移动方块，悔棋只能返回到上一步</div>
     </div>
   );
 };

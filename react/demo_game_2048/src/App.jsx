@@ -4,48 +4,96 @@ import GameBoard from "./GameBoard";
 import StatisticsBoard from "./StatisticsBoard";
 import ControlBoard from "./ControlBoard";
 import "./App.css";
+import { tickToTime } from "./utils";
 
 function App() {
-  const [score, setScore] = useState(0);
   const [boardKey, setBoardKey] = useState(0);
+  const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  // const [gameTime, setGameTime] = useState(0); //这个要放到子组件中
+  // 开始新游戏重置计时器
+  // 游戏结束后停止计时器，如果是成功结束判断是否是历史最佳时间
+  // 点击暂停案件暂停计时器，再次点击恢复计时器
+  const [gameTime, setGameTime] = useState(0);
   const [bestTime, setBestTime] = useState(0);
+  // 'ongoing' or 'paused' or 'succeed' or 'failed'
+  const [gameState, setGameState] = useState('ongoing');
+  const [history, setHistory] = useState([]);
+  const [board, setBoard] = useState([]); 
+
+  console.log("---> App rendered");
+
+  const initBestRecord = () => {
+    const savedBestScore = localStorage.getItem('2048GameBestScore');
+    let prevBestScore = savedBestScore ? parseInt(savedBestScore) : 0;
+    setBestScore(prevBestScore);
+    const savedBestTime = localStorage.getItem('2048GameBestTime');
+    let prevBestTime = savedBestTime ? parseInt(savedBestTime) : 0;
+    setBestTime(prevBestTime);
+    console.log("---> init best record: ", prevBestScore, prevBestTime);
+  }
+
+  useEffect(() => {
+    initBestRecord();
+  }, []);
 
   const handleNewGame = () => {
-    setScore(0);
     setBoardKey((prevKey) => prevKey + 1);
-    // setGameTime(0);
-    // 重置计时器会在useEffect中处理
-    setIsPaused(false);
+    setScore(0);
+    setGameTime(0);
+    setHistory([]);
+    initBestRecord();
+    setGameState('ongoing');
+  };
+
+  const saveGameHistory = (currentBoard) => {
+    setHistory(prev => [...prev, { board: [...currentBoard.map(row => [...row])], score }]);
+  };
+
+  const restoreGameState = (state) => {
+    setBoard(state.board);
+    setScore(state.score);
   };
 
   const handlePauseResume = () => {
     // 只是暂停或恢复计时器计时
-    setIsPaused(!isPaused);
+    if (gameState === 'ongoing') {
+      setGameState('paused');
+    } else if (gameState === 'paused') {
+      setGameState('ongoing');
+    }
   };
 
-  // 游戏计时器效果
-  // useEffect(() => {
-  //   let timer;
-  //   if (!isPaused) {
-  //     timer = setInterval(() => {
-  //       setGameTime((prevTime) => {
-  //         const newTime = prevTime + 1;
-  //         // 更新最佳时间
-  //         if (newTime < bestTime || bestTime === 0) {
-  //           setBestTime(newTime);
-  //         }
-  //         return newTime;
-  //       });
-  //     }, 1000);
-  //   }
-  //   return () => clearInterval(timer);
-  // }, [isPaused, bestTime]);
+  useEffect(() => {
+    console.log('---> gameState: ', gameState);
+    // 游戏结束时，检查是否创建新纪录
+    if (gameState === 'succeed') {
+      console.log("prev record: ", bestScore, bestTime);
+      if (score > bestScore) {
+        setBestScore(score);
+        localStorage.setItem('2048GameBestScore', score);
+      }
+      if (gameTime < bestTime || bestTime === 0) {
+        setBestTime(gameTime);
+        localStorage.setItem('2048GameBestTime', gameTime);
+      }
+    }
+
+    let timer;
+    if (gameState === 'ongoing') {
+      // 每秒更新一次用时
+      timer = setInterval(() => {
+        setGameTime((prevTime) => prevTime + 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gameState]);
 
   const handleUndo = () => {
-    // TODO: 实现撤销逻辑
+    if (gameState === 'ongoing' && history.length > 0) {
+      const lastState = history.pop();
+      restoreGameState(lastState);
+      setHistory([...history]);
+    }
   };
 
   return (
@@ -62,23 +110,30 @@ function App() {
         <StatisticsBoard
           score={score}
           bestScore={bestScore}
-          // time={`${Math.floor(gameTime / 60)}:${(gameTime % 60)
-          //   .toString()
-          //   .padStart(2, "0")}`}
-          time={0}
-          bestTime={`${Math.floor(bestTime / 60)}:${(bestTime % 60)
-            .toString()
-            .padStart(2, "0")}`}
+          time={tickToTime(gameTime)}
+          bestTime={tickToTime(bestTime)}
         />
 
         {/* 通过 key 值的改变， 每次重新渲染 GameBoard 组件都是一个全新的组件，不改变 key 的话，"新游戏" 无法重置棋盘， 因为 initGame() 方法未改变，不会重新初始化棋盘*/}
-        <GameBoard key={boardKey} onScoreUpdate={setScore} bestScore={bestScore} setBestScore={setBestScore}/>
+        <GameBoard
+          key={boardKey}
+          score={score}
+          setScore={setScore}
+          bestScore={bestScore}
+          gameTime={gameTime}
+          gameState={gameState}
+          setGameState={setGameState}
+          handleNewGame={handleNewGame}
+          board={board}
+          setBoard={setBoard}
+          saveGameHistory={saveGameHistory}
+        />
 
         <ControlBoard
           onNewGame={handleNewGame}
           onPauseResume={handlePauseResume}
           onUndo={handleUndo}
-          isPaused={isPaused}
+          gameState={gameState}
         />
       </Stack>
     </Container>
